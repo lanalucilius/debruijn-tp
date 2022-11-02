@@ -27,13 +27,13 @@ import textwrap
 import matplotlib.pyplot as plt
 matplotlib.use("Agg")
 
-__author__ = "Your Name"
+__author__ = "Lucilius"
 __copyright__ = "Universite Paris Diderot"
-__credits__ = ["Your Name"]
+__credits__ = ["Lucilius"]
 __license__ = "GPL"
 __version__ = "1.0.0"
-__maintainer__ = "Your Name"
-__email__ = "your@email.fr"
+__maintainer__ = "Lucilius"
+__email__ = "lucilius.lana@hotmail.com"
 __status__ = "Developpement"
 
 def isfile(path):
@@ -71,19 +71,38 @@ def get_arguments():
 
 
 def read_fastq(fastq_file):
-    pass
-
+    with open(fastq_file,"r") as monfich:
+        for i in monfich:
+            yield next(monfich).strip("\n")
+            next(monfich)
+            next(monfich)
+    
 
 def cut_kmer(read, kmer_size):
-    pass
+    for i in range(0,len(read)-kmer_size+1):
+        yield read[i:i+kmer_size]
+        
 
 
 def build_kmer_dict(fastq_file, kmer_size):
-    pass
+    dict={}
+    for read in read_fastq(fastq_file):
+        for kmer in cut_kmer(read,kmer_size):
+            if kmer in dict:
+                dict[kmer]+=1
+            else:
+                dict[kmer]=1
+    return dict
+                
+                
 
 
 def build_graph(kmer_dict):
-    pass
+    G= nx.DiGraph()
+    for kmer in kmer_dict:
+        G.add_edge(kmer[:-1],kmer[1:],weight=kmer_dict[kmer])
+    return G
+    
 
 
 def remove_paths(graph, path_list, delete_entry_node, delete_sink_node):
@@ -111,12 +130,34 @@ def solve_out_tips(graph, ending_nodes):
     pass
 
 def get_starting_nodes(graph):
-    pass
+    liste_starting_node=[]
+    for node in graph:
+        if len(list(graph.predecessors(node)))==0:
+            liste_starting_node.append(node)
+    return liste_starting_node
+    
 
 def get_sink_nodes(graph):
-    pass
+    liste_sink_node=[]
+    for node in graph:
+        if len(list(graph.successors(node)))==0:
+            liste_sink_node.append(node)
+    return liste_sink_node
+    
 
 def get_contigs(graph, starting_nodes, ending_nodes):
+    tuple={}
+    for node1 in starting_nodes:
+        for node2 in ending_nodes:
+            if nx.has_path(graph,node1,node2):
+                contig=""
+                for path in nx.all_simple_path():
+                    for node in path:
+                        contig += node[-1]
+
+
+                tuple[]
+
     pass
 
 def save_contigs(contigs_list, output_file):
@@ -152,6 +193,7 @@ def main():
     """
     # Get arguments
     args = get_arguments()
+    read_fastq()
 
     # Fonctions de dessin du graphe
     # A decommenter si vous souhaitez visualiser un petit 
