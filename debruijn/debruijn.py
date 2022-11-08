@@ -106,22 +106,77 @@ def build_graph(kmer_dict):
 
 
 def remove_paths(graph, path_list, delete_entry_node, delete_sink_node):
-    pass
+    for path in path_list:
+        if delete_entry_node==True and delete_sink_node==True:
+            graph.remove_nodes_from(path)
+        elif delete_entry_node==False and delete_sink_node==False:
+            graph.remove_nodes_from(path[1:len(path)-1])
+        elif delete_entry_node==False and delete_sink_node==True:
+            graph.remove_nodes_from(path[1:len(path)])
+        elif delete_entry_node==True and delete_sink_node==False:
+            graph.remove_nodes_from(path[:len(path)-1])
+    return graph
+
+
+    
 
 
 def select_best_path(graph, path_list, path_length, weight_avg_list, 
                      delete_entry_node=False, delete_sink_node=False):
-    pass
+    # Calcule de l'ecart type des poids moyens des chemins
+    ecart_weight=statistics.stdev(weight_avg_list)
+    #si il est superieur a 0: on selectionne le chemin avec le poids le plus elevé 
+    if(ecart_weight>0):
+        path_list.pop(weight_avg_list.index(max(weight_avg_list)))
+        remove_paths(graph,path_list,delete_entry_node,delete_sink_node)
+    #Calcule de l'ecart type pour la longueur
+    ecart_length=statistics.stdev(path_length)
+    #si l'écart des poids est nul on vérifie ecart type pour la longueur
+    if(ecart_weight==0):
+        if(ecart_length==0):
+            path_list.pop(randint(0,len(path_length)))
+            remove_paths(graph,path_list,delete_entry_node,delete_sink_node)
+        if(ecart_length>0):
+            path_list.pop(path_length.index(max(path_length)))
+            remove_paths(graph,path_list,delete_entry_node,delete_sink_node)
+    
+    return graph
+    
 
 def path_average_weight(graph, path):
     """Compute the weight of a path"""
     return statistics.mean([d["weight"] for (u, v, d) in graph.subgraph(path).edges(data=True)])
 
 def solve_bubble(graph, ancestor_node, descendant_node):
+    path_list=[]
+    weight_avg_list=[]
+    path_length=[]
+    for path in nx.all_simple_paths(graph,ancestor_node,descendant_node):
+        path_list.append(path)
+        path_length.append(len(path))
+        weight_avg_list.append(path_average_weight(graph,path))
+    clean_graph=select_best_path(graph,path_list,path_length,weight_avg_list)
+    return clean_graph 
+
+
     pass
 
 def simplify_bubbles(graph):
-    pass
+    bubble= False
+    for noeud in graph:
+        liste_predecesseurs= list(graph.predecessors(noeud))
+        if len(liste_predecesseurs) > 1:
+            for noeud2 in graph:
+                noeud_ancetre= nx.lowest_common_ancestor(graph,noeud,noeud2)
+                if noeud_ancetre !=None:
+                    bubble=True
+                    break
+        if bubble == True:
+            break
+    if bubble:
+        graph=simplify_bubbles(solve_bubble(graph,noeud_ancetre,noeud2))
+    return graph
+    
 
 def solve_entry_tips(graph, starting_nodes):
     pass
@@ -146,21 +201,31 @@ def get_sink_nodes(graph):
     
 
 def get_contigs(graph, starting_nodes, ending_nodes):
-    tuple={}
+    tuple=[]
     for node1 in starting_nodes:
         for node2 in ending_nodes:
             if nx.has_path(graph,node1,node2):
-                contig=""
-                for path in nx.all_simple_path():
+                for path in nx.all_simple_paths(graph,node1,node2):
+                    contig=""
+                    contig +=path[0][0]
                     for node in path:
                         contig += node[-1]
-
-
-                tuple[]
-
-    pass
+                    tuple.append([contig, len(contig)])
+    
+    return tuple
 
 def save_contigs(contigs_list, output_file):
+    n=0
+    
+    with open(output_file, "w") as f:
+        
+        for contigs in contigs_list:
+            
+            f.write(f">contig_{n} len={contigs[1]}\n")
+            
+            f.write(f"{textwrap.fill(contigs[0],width=80)}\n")
+            
+            n+=1
     pass
 
 
